@@ -1,0 +1,8 @@
+library(tidyverse)
+library(lubridate)
+library(readxl)
+library(DBI)
+library(odbc)
+library(rjags)
+library(runjags)
+library(tidybayes)

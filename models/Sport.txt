@@ -1,0 +1,19 @@
+model{
+  for( j in 1 : periods ) {
+    samp[j] ~ dbin(p_samp[j],catch[j])
+    p_samp[j] ~ dbeta( 0.5, 0.5) 
+    for( i in 1 : groups ) {
+      x_tag[i,j] <- max(0,(tag[i , j] / p_samp[j]) / det_prob)
+    }
+  }
+  for( i in 1 : groups ) {
+    sum_tag[i] <- round(sum(x_tag[i,])) #SUM TAGS BY GROUP (need binomials above) 
+    xBON_tag[i] <- round(BON_tag[i]/pB_det) #Expand TAGS AT BON (need binomial to propogate uncertainty)
+    BONP_tag[i] <- xBON_tag[i] + sum_tag[i]  #add in tags harvested to get total runsize for lower river fisheries
+    hr[i] ~ dbeta(sum_tag[i]+0.5 ,BONP_tag[i]-sum_tag[i]+0.5) #add 0.5 to give beta prior for hr of beta (0.5,0.5)
+  }
+  det_prob ~ dbeta(det_beta[1],det_beta[2]) #prob of handheld unit detecting particular species
+  B_tags ~ dbin(pB_det,M_tags) # probability of detecting a PIT tag in BON ladder
+  pB_det ~ dbeta(0.5,0.5)
+  tot_catch_season <- round(sum(catch[]))
+}

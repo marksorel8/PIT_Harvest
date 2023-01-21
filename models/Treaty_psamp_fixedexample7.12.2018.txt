@@ -1,0 +1,66 @@
+model{
+  for ( i in 1:N_bio){ 
+    logweight[i] ~ dnorm(logmu_wt[period[i]]-pow(sigma_wt[j],2)/2,tau_wt[period[i]])
+  }
+  for( j in 2: periods) {
+    mu_wt[j]<-exp(logmu_wt[j])
+    logmu_wt[j] ~ dnorm(logmu_wt[j-1],tau_logmu_wt)
+    tau_wt[j]<-pow(sigma_wt[j],-2)
+    sigma_wt[j]<-exp(log_sigma_wt[j])
+    log_sigma_wt[j] ~ dnorm(log_sigma_wt[j-1]-pow(sigma_log_sigma_wt,2)/2,tau_log_sigma_wt)
+  }
+
+  for( j in 1:periods) {
+    T_catch[j] <- round(T_lbs[j] / mu_wt[j])
+    tot_catch[j] <- round(T_catch[j]+NT_catch[j])
+    tot_catch_adj[j]<-round(max(tot_catch[j],T_catch[j]*max(report_ratio,1)))
+  }
+
+  for( j in 1:samp_periods) {
+    samp[samp_period[j]] ~ dbin(p_samp[samp_period[j]],tot_catch_adj[samp_period[j]])
+    p_samp[samp_period[j]] ~ dbeta( 0.5, 0.5)
+    for( i in 1:groups) {
+      tagsampratio[i,samp_period[j]] ~ dbeta(tag[i,samp_period[j]]+0.001,samp[samp_period[j]]-tag[i,samp_period[j]]+0.001)
+      #tagsampratio[i,samp_period[j]]<-tag[i,samp_period[j]]/samp[samp_period[j]]  #DOESN'T PROPOGATE UNCERTAINTY IN SAMPLE RATE FOR INDIVIDUAL TAG GROUPS
+      xx_tag[i,samp_period[j]]<-tot_catch_adj[samp_period[j]]*tagsampratio[i,samp_period[j]]
+      p_samp_tag[i,samp_period[j]] ~ dbeta(samp[samp_period[j]]*tagsampratio[i,samp_period[j]]+0.001,xx_tag[i,samp_period[j]]-samp[samp_period[j]]*tagsampratio[i,samp_period[j]]+0.001)
+      x_tag[i,samp_period[j]] <- xx_tag[i,samp_period[j]]  / det_prob
+    }
+  } 
+  for (j in 1:non_samp_periods){
+    p_samp[non_samp_period[j]]<-0
+    for( i in 1:groups) {
+      x_tag[i,non_samp_period[j]] <-0
+    }
+  }
+
+  for( i in 1 : groups ) {
+    sum_tag[i] <- round(sum(x_tag[i,])) #SUM TAGS BY GROUP (need binomials above) 
+    xBON_tag[i] <- max(round(BON_tag[i]/pB_det),sum_tag[i]) #Expand TAGS AT BON (need binomial to propogate uncertainty)
+    hr[i] ~ dbeta(sum_tag[i]+0.5 ,xBON_tag[i]-sum_tag[i]+0.5) #add 0.5 to give beta prior for hr of beta (0.5,0.5)
+  }
+  det_prob ~ dbeta(det_beta[1],det_beta[2]) #prob of handheld unit detecting particular species
+  B_tags ~ dbin(pB_det,M_tags) # probability of detecting a PIT tag in BON ladder
+  pB_det ~ dbeta(0.5,0.5)
+
+
+  #catch totals and reporting rate
+  tot_catch_sampled<-round(sum(tot_catch[samp_period[]])) #consider tot_catch_adj
+  sampled_prop<-tot_catch_sampled/round(sum(tot_catch[])) #consider tot_catch_adj
+
+  tot_catch_season<- round(sum(tot_catch[]))
+  tot_catch_season_adj<- round(sum(tot_catch_adj[]))
+  report_ratio<-total_catch_reported/tot_catch_season
+
+  #prior for among period weight mean and variance
+  mu_wt[1]<-exp(logmu_wt[1])
+  logmu_wt[1] ~ dnorm(0,0.1) I(,4) 
+  tau_logmu_wt<-pow(sigma_logmu_wt,-2)
+  sigma_logmu_wt ~ dunif(0,1)
+
+  tau_wt[1]<-pow(sigma_wt[1],-2)
+  sigma_wt[1]<-exp(log_sigma_wt[1])
+  log_sigma_wt[1]~dnorm(-2.78,.1) 
+  tau_log_sigma_wt<-pow(sigma_log_sigma_wt,-2)
+  sigma_log_sigma_wt ~ dunif(0,1)
+}

@@ -1,0 +1,62 @@
+model{
+  for(j in 1:periods) {
+
+    samp[j] ~ dbin(p_samp[j], catch[j])
+    p_samp[j] ~ dbeta( 0.5, 0.5)
+
+    for(i in 1:groups) {
+      tagsampratio[i, j] ~ dbeta(tag[i, j] + 0.001, samp[j] - tag[i, j] + 0.001)
+      
+      # tag[i, j] ~ dbinom(ptag[i, j], catch[j])
+      # ptag[i, j] <- p_samp[j] * det_prob * tagsampratio[i, j]
+      
+      #tagsampratio[i,samp_period[j]]<-tag[i,samp_period[j]]/samp[samp_period[j]]  #DOESN'T PROPOGATE UNCERTAINTY IN SAMPLE RATE FOR INDIVIDUAL TAG GROUPS
+      xx_tag[i,j]<-catch[j]*tagsampratio[i,j]
+      x_tag[i,j] <- xx_tag[i,j]  / det_prob
+  #    x_tag[i, j] <- tag[i,j]/ptag[i,j]
+      # THIS ISNT BEING USED ANYWHERE
+      p_samp_tag[i,j] ~ dbeta(samp[j]*tagsampratio[i,j]+0.001, xx_tag[i,j] - samp[j]*tagsampratio[i,j]+0.001)
+
+    }
+  }
+
+  for(i in 1:groups) {
+    sum_tag[i] <- round(sum(x_tag[i,])) #SUM TAGS BY GROUP (need binomials above)
+    xBON_tag[i] <- round(BON_tag[i]/pB_det) #Expand TAGS AT BON (need binomial to propogate uncertainty)
+    BONP_tag[i] <- xBON_tag[i] + sum_tag[i]  #add in tags harvested to get total runsize for lower river fisheries
+    hr[i] ~ dbeta(sum_tag[i]+0.5 , BONP_tag[i] - sum_tag[i]+0.5) #add 0.5 to give beta prior for hr of beta (0.5,0.5)
+  }
+
+  det_prob ~ dbeta(det_beta[1], det_beta[2]) #prob of handheld unit detecting particular species
+  B_tags ~ dbin(pB_det,M_tags) # probability of detecting a PIT tag in BON ladder
+  pB_det ~ dbeta(0.5,0.5)
+  tot_catch_season <- round(sum(catch[]))
+}
+
+# model{
+# for (j in 1: periods){
+# samp[j]~dbin(p_samp[j], catch[j])
+# p_samp[j] ~ dbeta( 0.5, 0.5)
+# 
+# for (i in 1:groups){
+# 
+# tag[i,j] ~ dbin(p_samp[j]* det_prob, xtag[i,j])
+# xtag[i,j] ~ dpois(mu_xtag[i,j])
+# mu_xtag[i,j] <- lambda_xtag[i,j]/(p_samp[j]*det_prob)
+# lambda_xtag[i,j]~dgamma(0.005,.005)
+#   }
+# }
+
+#  for (i in 1:groups){
+#    sumxtag[i] <- sum(xtag[i,])
+#    sumxtag[i] ~ dbin(hr[i], xBON_tag[i])
+#    BON_tag[i] ~ dbin(pB_det, xBON_tag[i])
+#    xBON_tag[i] ~ dpois(mu[i])
+#    mu[i] <- lambda[i]/pB_det
+#    lambda[i] ~ dunif(0,10000)
+#    }
+# 
+#   det_prob ~ dbeta(det_beta[1],det_beta[2]) #prob of handheld unit detecting particular species
+#   B_tags ~ dbin(pB_det, M_tags) # probability of detecting a PIT tag in BON ladder
+#   pB_det ~ dbeta(0.5,0.5)
+# }
