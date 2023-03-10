@@ -1,0 +1,53 @@
+---
+title: "Paper"
+output: html_document
+date: "2023-03-09"
+---
+
+### Intro
+
+Columbia River has many mixed stock fisheries composed of healthy and harvestable natural pops, ESA listed pops, and hatchery stocks. Management aims to balance harvest opportunities with conservation using abundance based harvest control rules. Ability to accurately estimate harvest rates is key to implementing fisheries to achieve the management objectives. Also to reconstruct returns to the river to understand population productivity to inform harvest control rules. 
+
+
+### Objective
+
+Evaluate harvest rates based on proportions of PIT tagged adults detected in catch and compare to estimates of harvest based on other means of run reconstruction.
+
+Variance partitioning questions: how does harvest differ within and among ESUs, MGPs, DIPs, and years.
+
+### Methods
+
+#### Data
+
+Returning population of PIT tagged adults measured as the number adults detected at Bonneville Dam and in lower-river fisheries.
+
+A portion of catch sampled for PIT tags, with the number of detected tags and the number of fish sampled recorded. 
+
+Total catch (uncertainty?)
+
+Auxiliary information on the detection probability of PIT tags in catch sampled and fish passing Bonneville Dam (or only using catch detections upstream of Bonneville which were also detected at Bonneville and not worrying about non-detections at Bonneville).
+
+
+
+
+#### Estimation model
+
+Hierarchical modeling of harvest rate ($HR$) across years and DIPs (what does this stand for?).
+
+
+$$logit(HR) =  ESU + MPG^* + DPS^* + Year^* + Year:ESU^* + Year:MPG^* + Year:DPS^* $$
+
+where effects with an asterisk are random effects [with random year effects specific to individual groups, probably one hyperdistribution (variance) for all groups but possibly different].  Effects of ESU, MPG and DPS can be used to assess average differences across groups. We could compare variances of random effects of year pertaining to different different levels of hierarchy to assess "synchrony" (Lahoz-Monfort et al., 2013). 
+
+$$m\sim binomial(HR*p,N)  $$
+where $m$ is the number of tags detected in the catch, $N$ is the number of tags detected in the catch downstream of Bonneville and when passing Bonneville, and $p$ is the probability of a tag being detected in a caught containing a tag. Assuming perfect tag detection on all fish scanned for tags, $p = s/C$, where $s$ is the number of fish scanned for tags and $C$ is the total catch. If tags are detected at a rate of $r$ in scanned fish, then $p = rs/C$. 
+
+Model assumes no natural mortality between lower river fisheries, Bonneville Dam, and upriver fisheries. 
+
+- Any bits about modeling uncertainty in the total catch if we want to include that in the modeling. If so, I would almost say we just throw a 10% CV on all catch estimates or something rather than modeling only the effect of uncertainty pertaining to weight samples in the commercial/treaty catch and assuming that all other catch information is measured without error. 
+
+### Results
+
+
+### Discussion
+
